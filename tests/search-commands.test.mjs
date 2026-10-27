@@ -3,9 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
-import { searchTokens } from '../scripts/lib/search-tokens.mjs';
-import { searchScope, matchesSearch } from '../src/lib/search.ts';
-import { searchIndexes } from '../src/lib/search-client.ts';
+import { searchScope } from '../src/lib/search.ts';
+import { oramaSearch } from '../src/lib/search-client.ts';
 
 const script = ts.transpileModule(await readFile('src/scripts/ui.ts', 'utf8'), {
   compilerOptions: {
@@ -20,7 +19,6 @@ function browser(home = false, options = {}) {
   const submits = [];
   const navigations = [];
   const queries = [];
-  const filters = [];
   const input = { value: '', addEventListener() {}, dispatchEvent() {} };
   const scope = { value: 'articles' };
   const output = { replaceChildren() {}, append() {}, addEventListener() {} };
@@ -82,7 +80,10 @@ function browser(home = false, options = {}) {
     innerWidth: 1440,
     navigator: { platform: 'Win32' },
     localStorage: { getItem: () => null, setItem() {} },
-    location: { href: 'https://example.com/en/search/', search: '' },
+    location: {
+      href: 'https://bloggpt.paulapplegate.com/en/search/',
+      search: '',
+    },
     history: { replaceState() {} },
     fetch: options.fetch,
     AbortController,
@@ -94,9 +95,7 @@ function browser(home = false, options = {}) {
     exports: {},
     require(name) {
       if (name === '../lib/i18n') return { t: () => ({}) };
-      if (name === '../lib/search') return { searchScope, matchesSearch };
-      if (name === '../../scripts/lib/search-tokens.mjs')
-        return { searchTokens };
+      if (name === '../lib/search') return { searchScope };
       if (name === 'astro:transitions/client')
         return {
           navigate: (url) => {
@@ -106,15 +105,12 @@ function browser(home = false, options = {}) {
         };
       if (name === '../lib/search-client')
         return {
-          searchIndexes:
-            options.searchIndexes ??
-            (() => async (folder) => ({
-              search: async (query, options) => {
-                queries.push({ folder, query });
-                filters.push(JSON.parse(JSON.stringify(options?.filters)));
-                return { results: [] };
-              },
-            })),
+          oramaSearch:
+            options.oramaSearch ??
+            (() => async (query, scope) => {
+              queries.push({ query, scope });
+              return [];
+            }),
         };
       return new Proxy({}, { get: () => () => {} });
     },
@@ -125,7 +121,6 @@ function browser(home = false, options = {}) {
     scope,
     navigations,
     queries,
-    filters,
     theme: () => root.dataset.theme,
     async submit(value = input.value) {
       input.value = value;
@@ -166,7 +161,7 @@ test('title searches never execute commands, including repeated submits and home
     assert.deepEqual(
       page.queries,
       Array.from({ length: 2 }, () => ({
-        folder: 'pagefind-title',
+        scope: 'title',
         query: query.trim().slice(1).trim(),
       })),
     );
@@ -193,75 +188,23 @@ test('explicit commands still execute after a title search, and ordinary queries
   const ordinary = browser();
   await ordinary.submit('Regular title');
   assert.deepEqual(ordinary.queries, [
-    { folder: 'pagefind', query: 'Regular title' },
+    { scope: 'articles', query: 'Regular title' },
   ]);
 });
 
-test('every production search scope filters by the exact current locale', async () => {
-  for (const locale of ['en', 'en-US-u-nu-latn']) {
-    const page = browser(false, { locale });
-    for (const scope of ['all', 'articles', 'title', 'body']) {
-      page.scope.value = scope;
-      await page.submit('Markdown');
-    }
-    assert.deepEqual(page.filters, [
-      { locale: locale.toLowerCase() },
-      { locale: locale.toLowerCase(), kind: 'posts' },
-      { locale: locale.toLowerCase() },
-      { locale: locale.toLowerCase() },
-    ]);
+test('UI forwards each search scope to Orama', async () => {
+  const page = browser();
+  for (const scope of ['all', 'articles', 'title', 'body']) {
+    page.scope.value = scope;
+    await page.submit('Markdown');
   }
+  assert.deepEqual(
+    page.queries.map((item) => item.scope),
+    ['all', 'articles', 'title', 'body'],
+  );
 });
 
-test('failed index initialization and fragment loads are released before the next UI search', async () => {
-  for (const phase of ['metadata', 'fragment']) {
-    const instances = [];
-    let indexes;
-    const page = browser(false, {
-      searchIndexes(base, signal) {
-        indexes = searchIndexes(base, signal, async () => ({
-          createInstance() {
-            const failed = instances.length === 0;
-            const instance = {
-              destroyed: 0,
-              init: async () => {},
-              destroy: async () => {
-                instance.destroyed++;
-              },
-              search: async () => {
-                if (!failed) return { results: [] };
-                if (phase === 'metadata')
-                  throw new Error('Metadata unavailable');
-                return {
-                  results: [
-                    {
-                      data: async () => {
-                        throw new Error('Fragment unavailable');
-                      },
-                    },
-                  ],
-                };
-              },
-            };
-            instances.push(instance);
-            return instance;
-          },
-        }));
-        return indexes;
-      },
-    });
-    await page.submit('Markdown');
-    assert.equal(instances.length, 1, phase);
-    assert.equal(instances[0].destroyed, 1, phase);
-    await page.submit('Markdown');
-    assert.equal(instances.length, 2, phase);
-    assert.equal(instances[1].destroyed, 0, phase);
-    await indexes.invalidate('pagefind', instances[1]);
-    assert.equal(instances[1].destroyed, 1, phase);
-  }
-});
-
-test('development search retries failed JSON index requests and then reuses the successful response', async () => {
+test('development search retries failed JSON requests and reuses successful data', async () => {
   for (const fail of [
     () => {
       throw new Error('Network failure');
@@ -272,10 +215,16 @@ test('development search retries failed JSON index requests and then reuses the 
     let calls = 0;
     const page = browser(false, {
       dev: true,
-      fetch: async () => (++calls === 1 ? fail() : Response.json([])),
+      oramaSearch: (url, signal, dev) =>
+        oramaSearch(url, signal, dev, async () =>
+          ++calls === 1 ? fail() : Response.json([]),
+        ),
     });
     await page.submit('Markdown');
+    // Dynamic engine imports may finish after the submit handler yields.
+    await new Promise((done) => setTimeout(done, 50));
     await page.submit('Markdown');
+    await new Promise((done) => setTimeout(done, 50));
     assert.equal(calls, 2);
     await page.submit('Markdown');
     assert.equal(calls, 2);

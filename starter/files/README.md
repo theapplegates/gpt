@@ -62,7 +62,7 @@ New posts start as drafts. Set `draft: false` and a publication date no later th
 # Build static files into dist/
 pnpm build
 
-# Preview the production build locally (including Pagefind search)
+# Preview the production build locally (including Orama search)
 pnpm preview
 ```
 

@@ -48,7 +48,7 @@ pnpm preview
 
 重点确认以下事项：
 
-1. `pnpm build` 无报错退出，且终端显示已完成 Pagefind 搜索索引生成。
+1. `pnpm build` 无报错退出，且终端显示已完成 Orama 搜索索引生成。
 2. 标记了 `draft: true` 的草稿文章没有出现在正式构建列表中。
 3. 在 `pnpm preview` 中测试站内搜索、RSS（默认配置下为 `/zh/rss.xml`，其他语言按前缀策略调整）和 Sitemap（`/sitemap-index.xml`）均可正常访问。
 

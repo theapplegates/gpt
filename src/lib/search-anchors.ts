@@ -21,7 +21,7 @@ export function searchAnchors(tree: DefaultTreeAdapterMap['node']) {
       element?.attrs.find((item) => item.name === name)?.value;
     if (
       ['script', 'style', 'annotation'].includes(element?.tagName ?? '') ||
-      attr('data-pagefind-ignore') !== undefined ||
+      attr('data-search-ignore') !== undefined ||
       attr('aria-hidden') === 'true'
     )
       return;

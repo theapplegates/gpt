@@ -1,4 +1,15 @@
-export function setupComposer(form: HTMLFormElement, signal: AbortSignal) {
+import { highlightText, type SearchResult } from '../lib/search-client';
+import type { SearchScope } from '../lib/search';
+
+export function setupComposer(
+  form: HTMLFormElement,
+  signal: AbortSignal,
+  search: (
+    query: string,
+    scope: SearchScope,
+    options?: { signal?: AbortSignal; limit?: number },
+  ) => Promise<SearchResult[]>,
+) {
   const input = form.querySelector<HTMLInputElement>('input[name="q"]')!;
   const panel = form.querySelector<HTMLElement>('[data-completion-panel]');
   if (!panel) return;
@@ -9,9 +20,6 @@ export function setupComposer(form: HTMLFormElement, signal: AbortSignal) {
   const originals = [
     ...panel.querySelectorAll<HTMLButtonElement>('[data-completion-value]'),
   ].map((item) => item.cloneNode(true) as HTMLButtonElement);
-  const posts: { title: string; url: string }[] = JSON.parse(
-    document.body.dataset.postTitles ?? '[]',
-  );
   const locales: string[] = JSON.parse(
     document.body.dataset.completionLocales ?? '[]',
   );
@@ -26,7 +34,13 @@ export function setupComposer(form: HTMLFormElement, signal: AbortSignal) {
   const items = () => [
     ...panel.querySelectorAll<HTMLButtonElement>('[data-completion-value]'),
   ];
+  let timer: ReturnType<typeof setTimeout>;
+  let sequence = 0;
+  let activeSearch: AbortController | undefined;
   const hide = () => {
+    clearTimeout(timer);
+    ++sequence;
+    activeSearch?.abort();
     if (panel.matches(':popover-open')) panel.hidePopover();
     active = -1;
     input.removeAttribute('aria-activedescendant');
@@ -80,15 +94,7 @@ export function setupComposer(form: HTMLFormElement, signal: AbortSignal) {
   const render = (forceDefault = false) => {
     const value = input.value.trimStart();
     let entries: HTMLButtonElement[];
-    if (!forceDefault && value.startsWith('@')) {
-      const query = value.slice(1).toLocaleLowerCase();
-      const source = originals.find((item) =>
-        item.dataset.completionValue?.startsWith('@'),
-      );
-      entries = posts
-        .filter((post) => post.title.toLocaleLowerCase().includes(query))
-        .map((post) => option(`@${post.title}`, post.title, source));
-    } else if (!forceDefault && value.startsWith('/')) {
+    if (!forceDefault && value.startsWith('/')) {
       const [name, argument] = value.slice(1).toLowerCase().split(/\s+/);
       const source = originals.find(
         (item) => item.dataset.completionName === name,
@@ -148,18 +154,61 @@ export function setupComposer(form: HTMLFormElement, signal: AbortSignal) {
       signal,
     },
   );
-  input.addEventListener(
-    'input',
-    () => {
-      if (completing) return;
-      if (/^\s*[/@]/.test(input.value)) {
-        render();
-        if (list.childElementCount) show();
-        else hide();
-      } else hide();
-    },
-    { signal },
-  );
+  const suggest = async () => {
+    const value = input.value.trim();
+    const query = value.startsWith('@') ? value.slice(1).trim() : value;
+    if (!query || value.startsWith('/')) return;
+    const current = ++sequence;
+    activeSearch?.abort();
+    activeSearch = new AbortController();
+    try {
+      const results = await search(query, 'title', {
+        signal: activeSearch.signal,
+        limit: 8,
+      });
+      if (
+        current !== sequence ||
+        signal.aborted ||
+        document.activeElement !== input
+      )
+        return;
+      active = -1;
+      input.removeAttribute('aria-activedescendant');
+      const entries = results.map((result, index) => {
+        const item = option(
+          `${value.startsWith('@') ? '@' : ''}${result.title}`,
+          result.title,
+        );
+        item.id = `${panel.id}-option-${index}`;
+        const label = item.querySelector('span')!;
+        label.replaceChildren();
+        highlightText(label, result.title, [
+          ...query.split(/\s+/),
+          ...result.matchedTerms,
+        ]);
+        return item;
+      });
+      list.replaceChildren(...entries);
+      list.scrollTop = 0;
+      if (entries.length) show();
+      else hide();
+    } catch {
+      if (current === sequence) hide();
+    }
+  };
+  const onInput = (event?: Event) => {
+    hide();
+    if (completing || (event as InputEvent | undefined)?.isComposing) return;
+    if (/^\s*\//.test(input.value)) {
+      render();
+      if (list.childElementCount) show();
+    } else if (input.value.trim().replace(/^@/, '').trim()) {
+      timer = setTimeout(suggest, 180);
+    }
+  };
+  input.addEventListener('input', onInput, { signal });
+  input.addEventListener('compositionend', () => onInput(), { signal });
+  input.addEventListener('blur', hide, { signal });
   input.addEventListener(
     'keydown',
     (event) => {
@@ -187,7 +236,12 @@ export function setupComposer(form: HTMLFormElement, signal: AbortSignal) {
         event.preventDefault();
         event.stopPropagation();
         hide();
-      } else if (event.key === 'Tab') hide();
+      } else if (event.key === 'Tab') {
+        if (active >= 0) {
+          event.preventDefault();
+          complete(options[active]);
+        } else hide();
+      }
     },
     { signal },
   );

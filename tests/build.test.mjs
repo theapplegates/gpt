@@ -19,10 +19,10 @@ test('production pages, RSS and Sitemap enforce article visibility', async () =>
   assert.ok(sitemap.includes('/zh/posts/welcome/'));
   assert.equal(sitemap.includes('/posts/unlisted/'), false);
   assert.equal(sitemap.includes('/search/'), false);
-  await access('dist/pagefind/pagefind.js');
+  await access('dist/search/en.json');
   const hidden = await readFile('dist/zh/posts/unlisted/index.html', 'utf8');
   assert.ok(hidden.includes('noindex,nofollow'));
-  assert.equal(hidden.includes('data-pagefind-body'), false);
+  assert.equal(hidden.includes('data-search-record="posts"'), false);
 });
 
 test('rendered Markdown never points to stale code-renderer assets', async () => {
@@ -66,7 +66,7 @@ test('random recent article candidates are public, local, and generated', async 
       assert.ok(url.startsWith(`/${lang}/posts/`));
       assert.ok(!/unlisted|draft-example|future-example/.test(url));
       const article = await readFile(join('dist', url, 'index.html'), 'utf8');
-      assert.ok(article.includes('data-pagefind-body'));
+      assert.ok(article.includes('data-search-record="posts"'));
       assert.ok(!article.includes('noindex,nofollow'));
     }
   }

@@ -48,7 +48,7 @@ jobs:
           pnpm build
           test -f dist/zh/posts/hello-world/index.html
           test -f dist/zh/about/index.html
-          test -f dist/pagefind/pagefind.js
+          test -f dist/search/zh.json
           grep -q 'https://starter.example.com/' dist/sitemap-0.xml
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:

@@ -37,7 +37,7 @@ pnpm build
 pnpm preview
 ```
 
-The build checks types and generates pages, attachments, share covers and Pagefind search indexes. Preview articles, images, links, language switching and search results.
+The build checks types and generates pages, attachments, share covers and Orama search indexes. Preview articles, images, links, language switching and search results.
 
 ## RSS and Sitemap
 
@@ -52,6 +52,6 @@ For automatic blog builds and deployments, connect a Git repository to Vercel (r
 3. Set Install Command to `pnpm install --frozen-lockfile`, Build Command to `pnpm build` and Output Directory to `dist`. Select Node.js `24.x` and add `ENABLE_EXPERIMENTAL_COREPACK=1` to the Production and Preview environment variables.
 4. Set `site.baseUrl` to the production domain, commit the configuration and deploy. Later pushes to the production branch automatically rebuild and update the site; use other branches for previews.
 
-`pnpm build` generates bundled attachments, share covers and Pagefind search indexes. Trigger another build when a scheduled article reaches its publication date. Other static hosts can also publish the complete `dist/` directory with directory indexes and a 404 page.
+`pnpm build` generates bundled attachments, share covers and Orama search indexes. Trigger another build when a scheduled article reaches its publication date. Other static hosts can also publish the complete `dist/` directory with directory indexes and a 404 page.
 
 See [Build and deploy](https://bloggpt.reincarnatey.net/en/guide/deployment) for the full steps.

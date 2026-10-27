@@ -23,7 +23,7 @@
 
 ## 修改文章内容后，为什么站内搜索搜不到新内容？
 
-正式站点使用 **Pagefind**，静态索引在执行 `pnpm build` 时生成；修改内容后需要重新构建，`pnpm preview` 才会展示最新结果。`pnpm dev` 则使用开发专用的 JSON 搜索数据，无需预先构建 Pagefind 索引。修改文章后若结果仍是旧内容，可刷新页面再搜索；发布前请运行 `pnpm build && pnpm preview` 验证正式索引。
+正式站点使用 **Orama**，静态索引在执行 `pnpm build` 时生成；修改内容后需要重新构建，`pnpm preview` 才会展示最新结果。`pnpm dev` 则使用开发专用的 JSON 搜索数据，无需预先构建 Orama 索引。修改文章后若结果仍是旧内容，可刷新页面再搜索；发布前请运行 `pnpm build && pnpm preview` 验证正式索引。
 
 ## 修改 `blog.config.ts` 文案后，为什么切换语言还是显示旧文字？
 

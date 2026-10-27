@@ -1,89 +1,93 @@
-type PagefindData = {
-  url: string;
-  excerpt: string;
-  meta: { title?: string; description?: string; sections?: string };
-};
-export type Pagefind = {
-  init: () => Promise<void>;
-  destroy: () => Promise<void>;
-  search: (
-    query: string,
-    options?: { filters: { kind?: string; locale?: string } },
-  ) => Promise<{ results: { data: () => Promise<PagefindData> }[] }>;
-};
-type PagefindModule = {
-  createInstance: (options?: { baseUrl: string }) => Pagefind;
-};
-let retryId = 0;
-const importUrls = new Map<string, string>();
+import type { SearchScope } from './search';
+import type { SearchSection } from './search-context';
+import { Highlight } from '@orama/highlight';
 
-/** ES modules survive Astro navigation. Each page needs its own language-aware instance. */
-export function searchIndexes(
-  base: string,
-  signal: AbortSignal,
-  load: (path: string) => Promise<PagefindModule> = (path) =>
-    import(/* @vite-ignore */ path),
+export type SearchResult = {
+  title: string;
+  description: string;
+  url: string;
+  sections: SearchSection[];
+  matchedTerms: string[];
+};
+
+/** Load the locale index only on demand and share it between results and autocomplete. */
+export function oramaSearch(
+  indexUrl: string,
+  pageSignal: AbortSignal,
+  dev = false,
+  request: typeof fetch = fetch,
 ) {
-  const promises = new Map<string, Promise<Pagefind>>();
-  const disposers = new WeakMap<Pagefind, () => Promise<void>>();
-  const get = (folder: string) => {
-    if (signal.aborted)
-      return Promise.reject(
-        new DOMException('Navigation cancelled', 'AbortError'),
-      );
-    let promise = promises.get(folder);
-    if (!promise) {
-      // Browsers also cache failed module imports; a retry needs a fresh URL.
-      const path = `${base}${folder}/pagefind.js`;
-      const url = importUrls.get(path) ?? path;
-      promise = Promise.resolve()
-        .then(() => load(url))
-        .catch((error) => {
-          if ((importUrls.get(path) ?? path) === url)
-            importUrls.set(path, `${path}?retry=${++retryId}`);
-          throw error;
-        })
-        .then((module) => {
-          if (signal.aborted)
-            throw new DOMException('Navigation cancelled', 'AbortError');
-          // Our records already carry the full pathname including site.base.
-          const instance = module.createInstance({ baseUrl: '/' });
-          let disposal: Promise<void> | undefined;
-          const onAbort = () => {
-            void dispose();
-          };
-          const dispose = () => {
-            signal.removeEventListener('abort', onAbort);
-            // Wait for a starting worker, and destroy even if initialization fails.
-            return (disposal ??= Promise.resolve()
-              .then(() => instance.init())
-              .catch(() => {})
-              .then(() => instance.destroy())
-              .catch(() => {}));
-          };
-          disposers.set(instance, dispose);
-          signal.addEventListener('abort', onAbort, { once: true });
-          return instance;
-        })
-        .catch((error) => {
-          if (promises.get(folder) === promise) promises.delete(folder);
-          throw error;
-        });
-      promises.set(folder, promise);
-    }
-    return promise;
+  let pending:
+    | Promise<{
+        engine: typeof import('../../scripts/lib/orama-search.mjs');
+        database: ReturnType<
+          typeof import('../../scripts/lib/orama-search.mjs').createSearchDatabase
+        >;
+      }>
+    | undefined;
+  return async (
+    query: string,
+    scope: SearchScope,
+    options: { signal?: AbortSignal; limit?: number } = {},
+  ): Promise<SearchResult[]> => {
+    pageSignal.throwIfAborted();
+    options.signal?.throwIfAborted();
+    pending ??= Promise.all([
+      import('../../scripts/lib/orama-search.mjs'),
+      request(indexUrl, { signal: pageSignal }).then(async (response) => {
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error('Search index unavailable');
+        return response.json();
+      }),
+    ])
+      .then(([engine, data]) => ({
+        engine,
+        database: engine.restoreSearchDatabase(
+          data === null
+            ? engine.buildSearchDatabase([])
+            : dev
+              ? engine.buildSearchDatabase(data)
+              : data,
+        ),
+      }))
+      .catch((error) => {
+        pending = undefined;
+        throw error;
+      });
+    const { engine, database } = await pending;
+    pageSignal.throwIfAborted();
+    options.signal?.throwIfAborted();
+    return engine.querySearchDatabase(
+      database,
+      query,
+      scope,
+      options.limit ?? 30,
+    ) as unknown as SearchResult[];
   };
-  return Object.assign(get, {
-    async invalidate(folder: string, instance: Pagefind) {
-      const pending = promises.get(folder);
-      if (
-        !pending ||
-        (await pending.catch(() => undefined)) !== instance ||
-        promises.get(folder) !== pending
-      )
-        return;
-      promises.delete(folder);
-      await disposers.get(instance)?.();
-    },
-  });
+}
+
+/** Build marks from text nodes; content and search responses never become HTML. */
+export function highlightText(
+  element: HTMLElement,
+  text: string,
+  terms: string[],
+) {
+  const words = [...new Set(terms.filter(Boolean))].sort(
+    (a, b) => b.length - a.length,
+  );
+  if (!words.length) {
+    element.textContent = text;
+    return;
+  }
+  const highlighter = new Highlight();
+  const positions = highlighter.highlight(text, words.join(' ')).positions;
+  let offset = 0;
+  for (const { start, end } of positions) {
+    element.append(document.createTextNode(text.slice(offset, start)));
+    const mark = document.createElement('mark');
+    mark.textContent = text.slice(start, end + 1);
+    element.append(mark);
+    offset = end + 1;
+  }
+  element.append(document.createTextNode(text.slice(offset)));
 }

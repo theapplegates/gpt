@@ -8,6 +8,11 @@ tags: ['design']
 updated: '2026-10-16'
 ---
 
+
+<cloudinary-picture src="assets/images/lucas-schneider-ZamSxRBO5WI-unsplash" cloud-name="paulapplegate-com" alt="An old tree in the fog" width="4672" height="6224" sizes="(max-width: 720px) calc(100vw - 3rem), 672px"></cloudinary-picture>
+
+
+
 Choose which details appear on an article page, such as its title, author and dates. Global settings live in `article.display`; per-entry settings use `display` in frontmatter.
 
 ## Choose the details to show

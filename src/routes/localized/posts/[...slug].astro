@@ -99,7 +99,6 @@ const shareImage = features.shareCover
     data-search-record={discoverable ? 'posts' : undefined}
     data-search-title={post.data.title}
     data-search-description={post.data.description}
-    data-pagefind-body={discoverable ? '' : undefined}
     lang={localeInfo(post.data.lang).lang}
   >
     {cover && (
@@ -114,7 +113,7 @@ const shareImage = features.shareCover
     <header class="article-header">
       {display.title && (
         <div class="article-title-block">
-          <div class="eyebrow" data-pagefind-ignore>
+          <div class="eyebrow" data-search-ignore>
             {post.data.categories.map((category) => (
               <a href={href(lang, `categories/${encodedSlug(category)}/`)}>
                 {labels.categories[category] ?? category}
@@ -123,19 +122,19 @@ const shareImage = features.shareCover
             {post.data.draft && <span class="status-label">{ui.draft}</span>}
             {post.data.hidden && <span class="status-label">{ui.hidden}</span>}
           </div>
-          <h1 data-pagefind-meta="title">{post.data.title}</h1>
+          <h1>{post.data.title}</h1>
           {post.data.description && <p>{post.data.description}</p>}
         </div>
       )}
       <ArticleMeta lang={lang} entry={post} display={display} />
     </header>
     {post.data._locale && post.data._locale !== lang && (
-      <p class="article-note" data-pagefind-ignore>
+      <p class="article-note" data-search-ignore>
         {ui.fallback}
       </p>
     )}
     {post.data.draft && (
-      <p class="article-note" data-pagefind-ignore>
+      <p class="article-note" data-search-ignore>
         {ui.draftNotice}
       </p>
     )}
@@ -148,7 +147,7 @@ const shareImage = features.shareCover
         post.data.updated &&
         post.data.updated.getTime() !== post.data.date.getTime()) ||
       (display.tags && post.data.tags.length > 0)) && (
-      <div class="article-end" data-pagefind-ignore>
+      <div class="article-end" data-search-ignore>
         {display.tags &&
           post.data.tags.map((tag) => (
             <a class="tag" href={href(lang, `tags/${encodedSlug(tag)}/`)}>
@@ -175,7 +174,7 @@ const shareImage = features.shareCover
     {display.navigation && (
       <nav
         class="article-neighbors"
-        data-pagefind-ignore
+        data-search-ignore
         aria-label={ui.adjacentArticles}
       >
         {older ? (

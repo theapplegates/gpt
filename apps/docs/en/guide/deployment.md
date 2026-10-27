@@ -48,7 +48,7 @@ pnpm preview
 
 Verify that:
 
-1. `pnpm build` exits with code `0` and generates the Pagefind search index.
+1. `pnpm build` exits with code `0` and generates the Orama search index.
 2. Draft posts (`draft: true`) are excluded from the production output.
 3. Search, RSS (`/zh/rss.xml` with the default configuration; adjust for your language prefix policy), and Sitemap (`/sitemap-index.xml`) work as expected in `pnpm preview`.
 

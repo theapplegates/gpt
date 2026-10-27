@@ -11,6 +11,7 @@ import {
 } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 test(
   'production routes retain hidden translations while every discovery entry uses the selected version',
@@ -139,7 +140,15 @@ export default config;`,
       new Promise((resolve, reject) => {
         const child = spawn(
           process.execPath,
-          [path.join(workspace, 'node_modules/astro/bin/astro.mjs'), 'build'],
+          [
+            fileURLToPath(
+              new URL(
+                'bin/astro.mjs',
+                import.meta.resolve('astro/package.json'),
+              ),
+            ),
+            'build',
+          ],
           {
             cwd: root,
             windowsHide: true,
@@ -183,7 +192,9 @@ export default config;`,
               path.join(root, 'dist', route.slice(base.length), 'index.html'),
             );
             assert.ok(
-              sitemap.includes(`<loc>https://example.com/${route}</loc>`),
+              sitemap.includes(
+                `<loc>https://bloggpt.paulapplegate.com/${route}</loc>`,
+              ),
               route,
             );
             const html = await output(`${route.slice(base.length)}index.html`);
@@ -198,11 +209,15 @@ export default config;`,
               assert.equal((html.match(/class="tag"/g) ?? []).length, 1, route);
           }
         assert.ok(
-          !sitemap.includes(`<loc>https://example.com/${prefix}search/</loc>`),
+          !sitemap.includes(
+            `<loc>https://bloggpt.paulapplegate.com/${prefix}search/</loc>`,
+          ),
         );
       }
       assert.ok(
-        !sitemap.includes(`<loc>https://example.com/${base}404/</loc>`),
+        !sitemap.includes(
+          `<loc>https://bloggpt.paulapplegate.com/${base}404/</loc>`,
+        ),
       );
     };
     await assertSitemap();
@@ -509,7 +524,7 @@ export default config;`,
         .replace("'omit-default-prefix'", "'redirect-to-default'")
         .replace(
           'export default config;',
-          "config.site.baseUrl = 'https://example.com/blog/';\nexport default config;",
+          "config.site.baseUrl = 'https://bloggpt.paulapplegate.com/blog/';\nexport default config;",
         ),
     );
     const subdirectory = await build();

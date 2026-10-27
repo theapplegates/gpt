@@ -14,12 +14,13 @@ import { introRoutes } from '../../lib/intro-config';
 import type { SearchEntry } from '../../lib/search';
 export const GET: APIRoute = async ({ routePattern }) => {
   const lang = pageLocale(routePattern);
-  // Development-only fallback; production search uses Pagefind's chunked index.
+  // Development feeds Orama directly; production loads prebuilt per-locale indexes.
   const posts = import.meta.env.DEV ? await discoverablePosts(lang) : [];
   const records: SearchEntry[] = posts.map((post) => ({
     title: post.data.title,
     description: post.data.description,
     body: post.body ?? '',
+    sections: [],
     url: postHref(post, lang),
     kind: 'posts',
   }));
@@ -41,6 +42,7 @@ export const GET: APIRoute = async ({ routePattern }) => {
           title: entry.data.title,
           description: entry.data.description,
           body: entry.body ?? '',
+          sections: [],
           kind,
           url: href(
             lang,
@@ -56,6 +58,7 @@ export const GET: APIRoute = async ({ routePattern }) => {
         title: entry.data.title,
         description: entry.data.description,
         body: entry.body ?? '',
+        sections: [],
         kind: 'pages',
         url: href(lang, `${route}/`),
       });

@@ -239,12 +239,6 @@ const pageAnimation =
       ),
     )}
     data-locale={lang}
-    data-post-titles={JSON.stringify(
-      publicPosts.map((post) => ({
-        title: post.data.title,
-        url: postHref(post, lang),
-      })),
-    )}
     data-completion-locales={JSON.stringify(config.site.locales)}
     data-recent-urls={JSON.stringify(
       [...publicPosts]
@@ -263,7 +257,7 @@ const pageAnimation =
     </a>
     <Sidebar lang={lang} active={active} alternatePaths={alternatePaths} />
     <div class="main-shell">
-      <header class="topbar" data-pagefind-ignore>
+      <header class="topbar" data-search-ignore>
         <div class="topbar-left">
           <button
             class="icon-button reopen-sidebar"

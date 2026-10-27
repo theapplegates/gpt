@@ -4,11 +4,11 @@
   "description": "An Astro blog theme inspired by ChatGPT's layout.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/theapplegates/BlogGPT.git"
+    "url": "git+https://github.com/theapplegates/astro-theme-bloggpt.git"
   },
-  "homepage": "https://bloggpt.reincarnatey.net",
+  "homepage": "https://github.com/theapplegates/astro-theme-bloggpt.git",
   "bugs": {
-    "url": "https://github.com/theapplegates/BlogGPT/issues"
+    "url": "https://github.com/theapplegates/astro-theme-bloggpt/issues"
   },
   "keywords": [
     "astro",
@@ -32,7 +32,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "cloudinary:breakpoints": "node scripts/cloudinary-breakpoints.mjs",
+    "test": "node scripts/test.mjs",
     "new": "node scripts/new.mjs",
     "starter:export": "node scripts/export-starter.mjs",
     "docs:dev": "pnpm --filter @bloggpt/docs dev",
@@ -49,14 +50,17 @@
     "@fontsource/noto-sans-sc": "^5.3.1",
     "@iconify-json/lucide": "^1.2.143",
     "@iconify-json/simple-icons": "^1.2.100",
+    "@orama/highlight": "^0.1.9",
+    "@orama/orama": "^3.1.18",
     "@tailwindcss/typography": "^0.5.0",
     "@tailwindcss/vite": "^4.0.0",
     "astro": "^7.3.8",
     "astro-expressive-code": "^0.44.2",
     "astro-icon": "^1.1.5",
+    "cloudinary": "^2.11.0",
+    "hast-util-from-html": "^2.0.3",
     "katex": "^0.16.47",
     "mermaid": "^12.2.0",
-    "pagefind": "1.5.2",
     "parse5": "^8.0.1",
     "photoswipe": "^5.4.4",
     "rehype-katex": "^7.0.1",

@@ -1,23 +1,13 @@
-import { searchTokens } from '../../scripts/lib/search-tokens.mjs';
 import { t } from '../lib/i18n';
 import type { Locale } from '../types/config';
 import { navigate } from 'astro:transitions/client';
 
-import {
-  matchesSearch,
-  searchScope,
-  type SearchEntry,
-  type SearchScope,
-} from '../lib/search';
+import { searchScope, type SearchScope } from '../lib/search';
 
 import { setupComposer } from './composer';
 import { setupPagination } from './pagination';
-import {
-  contextSnippets,
-  renderedSections,
-  type SearchSection,
-} from '../lib/search-context';
-import { searchIndexes } from '../lib/search-client';
+import { contextSnippets, renderedSections } from '../lib/search-context';
+import { oramaSearch, highlightText } from '../lib/search-client';
 
 let controller: AbortController | undefined;
 let selectedTheme = 'system';
@@ -918,120 +908,14 @@ function setup() {
     { signal },
   );
 
-  const getSearchIndex = searchIndexes(base, signal);
-  let fallbackPromise: Promise<SearchEntry[]> | undefined;
-  const renderedCache = new Map<string, Promise<SearchSection[]>>();
-  const loadRenderedSections = (url: string) => {
-    let pending = renderedCache.get(url);
-    if (!pending) {
-      pending = fetch(url, { signal })
-        .then(async (res) => {
-          if (!res.ok) throw new Error('Search content unavailable');
-          return renderedSections(
-            new DOMParser().parseFromString(await res.text(), 'text/html'),
-          );
-        })
-        .catch((error) => {
-          renderedCache.delete(url);
-          throw error;
-        });
-      renderedCache.set(url, pending);
-    }
-    return pending;
-  };
   const dev = document.body.dataset.searchDev === 'true';
-  const loadResults = async (query: string, scope: SearchScope) => {
-    if (dev) {
-      fallbackPromise ??= fetch(
-        `${document.body.dataset.localeRoot}search-data.json`,
-        {
-          signal,
-        },
-      )
-        .then((res) => {
-          if (!res.ok) throw new Error('Search index unavailable');
-          return res.json();
-        })
-        .catch((error) => {
-          fallbackPromise = undefined;
-          throw error;
-        });
-      const candidates = (await fallbackPromise)
-        .filter((entry) => matchesSearch(entry, query, scope))
-        .slice(0, 30);
-      return Promise.all(
-        candidates.map(async (entry) => ({
-          ...entry,
-          sections:
-            scope === 'title' ? [] : await loadRenderedSections(entry.url),
-        })),
-      );
-    }
-    const folder =
-      scope === 'title' || scope === 'body' ? `pagefind-${scope}` : 'pagefind';
-    const pagefind = await getSearchIndex(folder);
-    try {
-      const result = await pagefind.search(searchTokens(query), {
-        filters: {
-          locale: lang.toLowerCase(),
-          ...(scope === 'articles' ? { kind: 'posts' } : {}),
-        },
-      });
-      const matches: {
-        title: string;
-        description: string;
-        sections: SearchSection[];
-        url: string;
-      }[] = [];
-      const runs = query.match(/\p{Script=Han}+/gu) ?? [];
-      // Load ranked candidates in batches; common characters must not download
-      // the whole corpus when the first batch already fills the results page.
-      for (
-        let offset = 0;
-        offset < result.results.length && matches.length < 30;
-        offset += 30
-      ) {
-        if (signal.aborted)
-          throw new DOMException('Navigation cancelled', 'AbortError');
-        const batch = await Promise.all(
-          result.results.slice(offset, offset + 30).map(async (item) => {
-            const data = await item.data();
-            const parsed = new DOMParser().parseFromString(
-              data.excerpt,
-              'text/html',
-            );
-            return {
-              title: data.meta.title ?? '',
-              description:
-                data.meta.description ??
-                (parsed.body.textContent ?? '').slice(0, 180),
-              sections: JSON.parse(
-                data.meta.sections ?? '[]',
-              ) as SearchSection[],
-              url: data.url,
-            };
-          }),
-        );
-        // Character tokens are candidates; verify original CJK runs to exclude
-        // unrelated occurrences of individual characters in distant paragraphs.
-        matches.push(
-          ...batch.filter((entry) => {
-            const text =
-              scope === 'title'
-                ? `${entry.title} ${entry.description}`
-                : scope === 'body'
-                  ? entry.sections.map((section) => section.text).join(' ')
-                  : `${entry.title} ${entry.description} ${entry.sections.map((section) => section.text).join(' ')}`;
-            return runs.every((run) => text.includes(run));
-          }),
-        );
-      }
-      return matches.slice(0, 30);
-    } catch (error) {
-      await getSearchIndex.invalidate(folder, pagefind);
-      throw error;
-    }
-  };
+  const loadResults = oramaSearch(
+    dev
+      ? `${document.body.dataset.localeRoot}search-data.json`
+      : `${base}search/${lang.toLowerCase()}.json`,
+    signal,
+    dev,
+  );
   const commandStatus =
     document.querySelector<HTMLDialogElement>('#blog-status');
   document
@@ -1099,28 +983,10 @@ function setup() {
       void navigate(`${document.body.dataset.localeRoot}${name}/`);
     return true;
   };
-  const highlight = (element: HTMLElement, text: string, query: string) => {
-    const words = query
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    if (!words.length) {
-      element.textContent = text;
-      return;
-    }
-    const pattern = new RegExp(`(${words.join('|')})`, 'gi');
-    for (const piece of text.split(pattern)) {
-      if (words.some((word) => new RegExp(`^${word}$`, 'i').test(piece))) {
-        const mark = document.createElement('mark');
-        mark.textContent = piece;
-        element.append(mark);
-      } else element.append(document.createTextNode(piece));
-    }
-  };
   for (const form of document.querySelectorAll<HTMLFormElement>(
     '[data-search-form]',
   )) {
-    setupComposer(form, signal);
+    setupComposer(form, signal, loadResults);
     const input = form.querySelector<HTMLInputElement>('input[name="q"]')!;
     const scopeInput = form.querySelector<HTMLInputElement>(
       'input[name="scope"]',
@@ -1220,6 +1086,7 @@ function setup() {
       { signal },
     );
     let sequence = 0;
+    let activeSearch: AbortController | undefined;
     let timer: ReturnType<typeof setTimeout>;
     const showMessage = (text: string) => {
       output.replaceChildren();
@@ -1235,7 +1102,9 @@ function setup() {
       if (titleSearch) setScope('title');
       const query = titleSearch ? value.slice(1).trim() : value;
       const request = ++sequence;
-      if (!query) {
+      activeSearch?.abort();
+      activeSearch = new AbortController();
+      if (!query || (!titleSearch && query.startsWith('/'))) {
         const recent = document.querySelector<HTMLTemplateElement>(
           '[data-search-recent]',
         );
@@ -1247,7 +1116,9 @@ function setup() {
       showMessage(ui.searching);
       try {
         const scope = searchScope(scopeInput.value);
-        const results = await loadResults(query, scope);
+        const results = await loadResults(query, scope, {
+          signal: activeSearch.signal,
+        });
         if (request !== sequence || signal.aborted) return;
         output.replaceChildren();
         if (!results.length) {
@@ -1261,18 +1132,35 @@ function setup() {
         for (const result of results) {
           const url = new URL(result.url, location.origin);
           if (url.origin !== location.origin) continue;
+          const terms = [...query.split(/\s+/), ...result.matchedTerms];
           const item = document.createElement('article');
           item.className = 'search-result';
           const link = document.createElement('a');
           link.href = `${url.pathname}${url.search}`;
           const title = document.createElement('h3');
-          highlight(title, result.title, query);
+          highlightText(title, result.title, terms);
           link.append(title);
           const description = document.createElement('p');
-          highlight(description, result.description, query);
+          highlightText(description, result.description, terms);
           item.append(link, description);
           if (scope !== 'title') {
-            for (const snippet of contextSnippets(result.sections, query)) {
+            if (dev) {
+              const response = await fetch(result.url, {
+                signal: activeSearch.signal,
+              });
+              if (!response.ok) throw new Error('Search content unavailable');
+              result.sections = renderedSections(
+                new DOMParser().parseFromString(
+                  await response.text(),
+                  'text/html',
+                ),
+              );
+              if (request !== sequence || signal.aborted) return;
+            }
+            for (const snippet of contextSnippets(
+              result.sections,
+              terms.join(' '),
+            )) {
               const context = document.createElement('a');
               context.className = 'search-context';
               const target = new URL(url);
@@ -1280,9 +1168,9 @@ function setup() {
               context.href = `${target.pathname}${target.search}${target.hash}`;
               const location = document.createElement('span');
               location.className = 'search-context-location';
-              highlight(location, snippet.heading || ui.bodyMatch, query);
+              highlightText(location, snippet.heading || ui.bodyMatch, terms);
               const text = document.createElement('span');
-              highlight(text, snippet.text, query);
+              highlightText(text, snippet.text, terms);
               context.append(location, text);
               item.append(context);
             }
@@ -1304,9 +1192,11 @@ function setup() {
     );
     input.addEventListener(
       'input',
-      () => {
+      (event) => {
+        ++sequence;
+        activeSearch?.abort();
         clearTimeout(timer);
-        timer = setTimeout(search, 180);
+        if (!(event as InputEvent).isComposing) timer = setTimeout(search, 180);
       },
       { signal },
     );
@@ -1329,7 +1219,22 @@ function setup() {
       input.value = new URLSearchParams(location.search).get('q') ?? '';
       if (input.value) void search();
     }
-    signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
+    input.addEventListener(
+      'compositionend',
+      () => {
+        clearTimeout(timer);
+        timer = setTimeout(search, 180);
+      },
+      { signal },
+    );
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        activeSearch?.abort();
+      },
+      { once: true },
+    );
   }
   signal.addEventListener('abort', () => clearTimeout(closeTimer), {
     once: true,

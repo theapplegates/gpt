@@ -55,7 +55,7 @@ Open the generated file, write your Markdown content, and save—the browser pre
 
 ## Preview Release Output
 
-Development mode provides full-text search through JSON data. Production builds generate the Pagefind search index and Open Graph cover images. To test everything locally before deploying:
+Development mode provides full-text search through JSON data. Production builds generate the Orama search index and Open Graph cover images. To test everything locally before deploying:
 
 ```bash
 pnpm build

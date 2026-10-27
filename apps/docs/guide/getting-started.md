@@ -55,7 +55,7 @@ pnpm new post travel --use bundle --title "旅行随笔"
 
 ## 预览正式构建结果
 
-开发模式可通过 JSON 数据进行全文搜索；正式站点使用的 Pagefind 索引与自动生成的 Open Graph 分享封面则在生产构建时生成。如果想在发布前完整验证这些功能，请运行：
+开发模式可通过 JSON 数据进行全文搜索；正式站点使用的 Orama 索引与自动生成的 Open Graph 分享封面则在生产构建时生成。如果想在发布前完整验证这些功能，请运行：
 
 ```bash
 pnpm build

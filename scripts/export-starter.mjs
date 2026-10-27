@@ -32,6 +32,7 @@ const included = [
   'scripts/build-search.mjs',
   'scripts/new.mjs',
   'scripts/lib',
+  'docs/search.md',
 ];
 
 async function copyTree(source, destination) {

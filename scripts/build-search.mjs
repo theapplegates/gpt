@@ -1,8 +1,7 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import * as pagefind from 'pagefind';
 import { searchRecords } from './lib/search-records.mjs';
-import { searchTokens } from './lib/search-tokens.mjs';
+import { buildSearchDatabase } from './lib/orama-search.mjs';
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -51,59 +50,37 @@ for (const file of files.filter((file) => file.endsWith('.html'))) {
   if (!canonical || excluded.has(canonical)) continue;
   records.push(...searchRecords(html));
 }
-for (const scope of ['all', 'title', 'body']) {
-  const { index, errors } = await pagefind.createIndex();
-  if (errors.length || !index)
-    throw new Error(`Pagefind initialization failed: ${errors.join(', ')}`);
-  // Multiple introductions on a route share a single result; never duplicate a URL.
-  const grouped = new Map();
-  for (const record of records) {
-    if (scope !== 'all' && record.kind !== 'posts') continue;
-    const key = `${record.language}:${record.url}`;
-    const prior = grouped.get(key);
-    grouped.set(
-      key,
-      prior
-        ? {
-            ...prior,
-            body: `${prior.body} ${record.body}`,
-            sections: [...prior.sections, ...record.sections],
-          }
-        : record,
-    );
-  }
-  for (const record of grouped.values()) {
-    const content =
-      scope === 'title'
-        ? `${record.title} ${record.description}`
-        : scope === 'body'
-          ? record.body
-          : `${record.title} ${record.description} ${record.body}`;
-    const result = await index.addCustomRecord({
-      url: record.url,
-      content: searchTokens(content),
-      // Pagefind's browser API lowercases HTML lang before choosing an index.
-      // BCP 47 matching is case-insensitive; preserve the region, normalize case.
-      language: record.language.toLowerCase(),
-      meta: {
-        title: record.title,
-        description: record.description,
-        sections: JSON.stringify(record.sections),
-      },
-      // Pagefind falls back to another language when an index is absent.
-      // An exact locale filter keeps that fallback from exposing other versions.
-      filters: { kind: [record.kind], locale: [record.language.toLowerCase()] },
-    });
-    if (result.errors.length) throw new Error(result.errors.join(', '));
-  }
-  const saved = await index.writeFiles({
-    outputPath: scope === 'all' ? 'dist/pagefind' : `dist/pagefind-${scope}`,
-  });
-  if (saved.errors.length) throw new Error(saved.errors.join(', '));
-  console.log(`Pagefind ${scope}: ${grouped.size} content pages.`);
-  await index.deleteIndex();
+// Multiple introductions on a route share one result.
+const grouped = new Map();
+for (const record of records) {
+  const key = `${record.language.toLowerCase()}:${record.url}`;
+  const prior = grouped.get(key);
+  grouped.set(
+    key,
+    prior
+      ? {
+          ...prior,
+          body: `${prior.body} ${record.body}`,
+          sections: [...prior.sections, ...record.sections],
+        }
+      : record,
+  );
+}
+await mkdir('dist/search', { recursive: true });
+const languages = new Set(
+  [...grouped.values()].map((record) => record.language.toLowerCase()),
+);
+// Empty locales deliberately have no index; the client returns no cross-language fallback.
+for (const language of languages) {
+  const entries = [...grouped.values()].filter(
+    (record) => record.language.toLowerCase() === language,
+  );
+  await writeFile(
+    `dist/search/${language}.json`,
+    JSON.stringify(buildSearchDatabase(entries)),
+  );
+  console.log(`Orama ${language}: ${entries.length} content pages.`);
 }
 console.log(
   `Excluded ${excluded.size} non-discoverable URLs from Sitemap and search.`,
 );
-await pagefind.close();

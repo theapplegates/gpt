@@ -23,7 +23,7 @@ Check two settings:
 
 ## Why doesn't search reflect my latest content edits?
 
-Production search uses **Pagefind**, which creates its static index during `pnpm build`. Rebuild after editing content to update results in `pnpm preview`. In `pnpm dev`, a development-only JSON search endpoint works without a Pagefind build. If results still show old content, refresh the page and search again. Run `pnpm build && pnpm preview` before publishing to verify the production index.
+Production search uses **Orama** in the browser, with a per-language index generated during `pnpm build`. No search server or API keys are required, including on Netlify. Rebuild after editing content to update results in `pnpm preview`. In `pnpm dev`, a development-only JSON search endpoint works without a Orama build. If results still show old content, refresh the page and search again. Run `pnpm build && pnpm preview` before publishing to verify the production index.
 
 ## Why do some UI strings stay in the old language after I edit `blog.config.ts`?
 

@@ -26,7 +26,7 @@ Get up and running in minutes with the [BlogGPT Starter Template](https://github
 | **Content Management**    | Posts, standalone pages, categories, and tags; custom slugs, folder-based content bundles for local attachments, and CLI scaffolding templates (archetypes)        |
 | **Rich Markdown**         | Full Markdown & MDX support with Expressive Code syntax highlighting, KaTeX math formulas, Mermaid diagrams, callout blocks, and image lightbox                    |
 | **Content Discovery**     | Pinned/featured posts, chronological archives, pagination with page jump, category cover styles, tag cloud, and grouped blogroll (friends links)                   |
-| **Instant Search**        | Static full-text search powered by Pagefind with article, title/description, body, and whole-site scopes, keyword highlighting, and `/` commands                   |
+| **Instant Search**        | Browser-based Orama search with live results, typo tolerance, autocomplete, highlighted matches, four search scopes, and `/` commands                              |
 | **Multi-Language (i18n)** | Built-in English and Simplified Chinese UI, localized URL routing, filename-based translation linking, and customizable UI text                                    |
 | **Stats & Sharing**       | Estimated reading time, word count, site-wide writing statistics & activity heatmap, customizable share snippets, and dynamic Open Graph cover generation          |
 | **SEO & Extensibility**   | Open Graph tags, Twitter Cards, RSS feeds, Sitemap, and extension hooks (`custom/head.html`, `custom/styles.css`, `custom/client.ts`)                              |
@@ -69,6 +69,10 @@ Get up and running in minutes with the [BlogGPT Starter Template](https://github
 ## Quick Start
 
 Follow the [Getting Started Guide](https://bloggpt.reincarnatey.net/en/guide/getting-started) to scaffold a new project, install dependencies, and start the local development server.
+
+## Search hosting
+
+Orama runs in the visitor’s browser. Netlify can host the complete site, including search, while your laptop is off. Use `pnpm build` with publish directory `dist`; no search service or API keys are needed. See [search setup](docs/search.md) for local previews and search behavior.
 
 ## License
 

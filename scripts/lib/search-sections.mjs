@@ -10,7 +10,7 @@ export function searchSections(root, adapter) {
   const { tag, attr, children, value } = adapter;
   const ignored = (node) =>
     ['script', 'style', 'annotation'].includes(tag(node)) ||
-    attr(node, 'data-pagefind-ignore') !== undefined ||
+    attr(node, 'data-search-ignore') !== undefined ||
     attr(node, 'aria-hidden') === 'true';
   const heading = (node) => /^h[1-6]$/.test(tag(node));
   const paragraph = (node) => attr(node, 'data-search-paragraph') !== undefined;

@@ -11,7 +11,7 @@ const findAll = (node, predicate) => [
 function text(node) {
   if (
     ['script', 'style', 'annotation'].includes(node.tagName) ||
-    attr(node, 'data-pagefind-ignore') !== undefined ||
+    attr(node, 'data-search-ignore') !== undefined ||
     attr(node, 'aria-hidden') === 'true'
   )
     return '';

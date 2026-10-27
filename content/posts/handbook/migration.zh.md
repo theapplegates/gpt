@@ -37,7 +37,7 @@ pnpm build
 pnpm preview
 ```
 
-构建会检查类型，生成页面、附件、分享图和 Pagefind 搜索索引。预览后检查文章、图片、链接、语言切换和搜索效果。
+构建会检查类型，生成页面、附件、分享图和 Orama 搜索索引。预览后检查文章、图片、链接、语言切换和搜索效果。
 
 ## RSS 与 Sitemap
 
@@ -52,6 +52,6 @@ pnpm preview
 3. Install Command 填写 `pnpm install --frozen-lockfile`，Build Command 填写 `pnpm build`，Output Directory 填写 `dist`；Node.js 选择 `24.x`，添加环境变量 `ENABLE_EXPERIMENTAL_COREPACK=1`，应用到 Production 与 Preview。
 4. 将 `site.baseUrl` 设为正式域名，提交配置并部署。后续向生产分支推送修改，Vercel 会自动构建和更新站点；其他分支可用于预览。
 
-`pnpm build` 包含附件、分享图和 Pagefind 搜索索引的生成。预约文章到达发布时间后，再触发一次构建。使用其他静态托管服务时，也可以发布完整 `dist/`，配置目录索引与 404 页面。
+`pnpm build` 包含附件、分享图和 Orama 搜索索引的生成。预约文章到达发布时间后，再触发一次构建。使用其他静态托管服务时，也可以发布完整 `dist/`，配置目录索引与 404 页面。
 
 详细步骤见[构建与部署](https://bloggpt.reincarnatey.net/guide/deployment)。

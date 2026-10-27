@@ -9,8 +9,20 @@ import { setImmediate as flush } from 'node:timers/promises';
 // same-page fragment keeps the old document without another astro:page-load.
 const scripts = new Map();
 for (const [name, file] of [
-  ['./events.js', 'node_modules/astro/dist/transitions/events.js'],
-  ['router', 'node_modules/astro/dist/transitions/router.js'],
+  [
+    './events.js',
+    new URL(
+      'dist/transitions/events.js',
+      import.meta.resolve('astro/package.json'),
+    ),
+  ],
+  [
+    'router',
+    new URL(
+      'dist/transitions/router.js',
+      import.meta.resolve('astro/package.json'),
+    ),
+  ],
   ['share', 'src/scripts/share.ts'],
 ]) {
   const source = (await readFile(file, 'utf8'))
@@ -79,7 +91,9 @@ function browser({ deferCopy = false } = {}) {
   const window = new EventTarget();
   window.document = document;
   window.onscrollend = null;
-  const location = new URL('https://example.com/en/posts/current/');
+  const location = new URL(
+    'https://bloggpt.paulapplegate.com/en/posts/current/',
+  );
   const history = {
     state: { index: 0, scrollX: 0, scrollY: 0 },
     replaceState(state, title, url) {

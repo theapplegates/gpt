@@ -24,7 +24,7 @@ $$
 ```mermaid
 graph LR
   A[Markdown 原文] --> B(Astro 静态构建)
-  B --> C[静态页面 + Pagefind 索引]
+  B --> C[静态页面 + Orama 索引]
 ```
 ````
 

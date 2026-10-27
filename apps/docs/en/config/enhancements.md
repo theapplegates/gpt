@@ -24,7 +24,7 @@ When `article.mermaid: true` (default), fenced ` ```mermaid ` code blocks are re
 ```mermaid
 graph LR
   A[Markdown File] --> B(Astro Build)
-  B --> C[Static HTML + Pagefind Index]
+  B --> C[Static HTML + Orama Index]
 ```
 ````
 

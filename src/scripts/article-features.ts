@@ -171,8 +171,13 @@ document.addEventListener('astro:page-load', () => {
           'aria-label',
           `${ui.viewImage}${image.alt ? `: ${image.alt}` : ''}`,
         );
-        image.before(anchor);
-        anchor.append(image);
+        // Keep the img directly inside picture so its sources remain active.
+        const media =
+          image.parentElement?.tagName === 'PICTURE'
+            ? image.parentElement
+            : image;
+        media.before(anchor);
+        anchor.append(media);
         images.push(image);
         anchor.addEventListener(
           'click',

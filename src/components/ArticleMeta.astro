@@ -18,7 +18,7 @@ const avatar = /^(https?:|data:)/.test(config.author.avatar)
 {(display.author ||
   (display.published && entry.data.date) ||
   display.readingTime) && (
-  <div class="article-meta" data-pagefind-ignore>
+  <div class="article-meta" data-search-ignore>
     {display.author && (
       <span class="article-author">
         <img src={avatar} alt="" width="22" height="22" />
