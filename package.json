@@ -4,11 +4,11 @@
   "description": "An Astro blog theme inspired by ChatGPT's layout.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Raincarnator/BlogGPT.git"
+    "url": "git+https://github.com/theapplegates/BlogGPT.git"
   },
   "homepage": "https://bloggpt.reincarnatey.net",
   "bugs": {
-    "url": "https://github.com/Raincarnator/BlogGPT/issues"
+    "url": "https://github.com/theapplegates/BlogGPT/issues"
   },
   "keywords": [
     "astro",

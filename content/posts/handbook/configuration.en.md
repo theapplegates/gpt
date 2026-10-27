@@ -18,9 +18,8 @@ Display copy accepts plain strings or localized maps:
 
 ```ts
 author: {
-  name: { zh: '站点作者', en: 'Site author' },
+  name: { en: 'Site author' },
   bio: {
-    zh: '记录日常与想法。',
     en: 'Notes from everyday life.',
   },
 }
