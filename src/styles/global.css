@@ -596,6 +596,7 @@ html[data-sidebar-resizing] .main-shell {
   }
 }
 .main-shell {
+  min-width: 0;
   margin-left: var(--sidebar-width);
   min-height: 100dvh;
   display: flex;
@@ -1191,6 +1192,10 @@ input[type='search']::-webkit-search-decoration {
   font-size: 16px;
   line-height: 1.95;
   max-width: none;
+  overflow-wrap: anywhere;
+}
+.article-content :is(img, video, iframe, embed, object) {
+  max-width: 100%;
 }
 .article-content h2 {
   font-size: 24px;
