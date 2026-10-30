@@ -1,0 +1,10 @@
+[
+  {
+    "name": "geist",
+    "familyName": "Geist",
+    "cssVariable": "--font-geist",
+    "provider": "google",
+    "options": null,
+    "googleCdn": "google"
+  }
+]

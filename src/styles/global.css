@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import "./astrotypes/aileron.css";
 @plugin '@tailwindcss/typography';
 
 :root {
@@ -2810,3 +2811,5 @@ main,
 .article-neighbors {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+
