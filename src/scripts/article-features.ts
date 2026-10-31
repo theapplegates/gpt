@@ -106,7 +106,7 @@ document.addEventListener('astro:page-load', () => {
               document.documentElement.dataset.theme === 'dark'
                 ? 'dark'
                 : 'default',
-            fontFamily: 'system-ui, sans-serif',
+            fontFamily: 'Geist, sans-serif',
             htmlLabels: false,
             suppressErrorRendering: true,
           });

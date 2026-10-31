@@ -2,6 +2,11 @@
 @import "./astrotypes/aileron.css";
 @plugin '@tailwindcss/typography';
 
+@theme {
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist', monospace;
+}
+
 :root {
   --bg: #fcfcfc;
   --sidebar-bg: #fcfcfc;
@@ -65,25 +70,15 @@ body {
   margin: 0;
   color: var(--text);
   background: var(--bg);
-  font-family:
-    -apple-system-body,
-    ui-sans-serif,
-    -apple-system,
-    system-ui,
-    'Segoe UI',
-    Helvetica,
-    'Apple Color Emoji',
-    Arial,
-    sans-serif,
-    'Segoe UI Emoji',
-    'Segoe UI Symbol';
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button,
@@ -200,7 +195,7 @@ svg {
   border-radius: 9.375px;
 }
 .brand-wordmark {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
   font-size: 18px;
   font-weight: 400;
   line-height: 18px;

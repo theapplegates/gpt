@@ -1,5 +1,4 @@
 import { defineConfig } from 'astro/config';
-import { astrotypeFonts } from "./src/astrotypes/fonts.mjs";
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
@@ -42,7 +41,6 @@ const excludedSitemapPaths = new Set([
 ]);
 
 export default defineConfig({
-  fonts: astrotypeFonts,
   site: config.site.url,
   base: config.site.base,
   output: 'static',

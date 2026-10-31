@@ -1,14 +1,35 @@
+@font-face {
+  font-family: 'Geist';
+  src: url('../../assets/fonts/geist/geist.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('../../assets/fonts/geist/geist-italic.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Serif';
+  src: url('../../assets/fonts/geist/geist-serif.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Pixel';
+  src: url('../../assets/fonts/geist/geist-pixel.ttf') format('truetype');
+  font-display: swap;
+}
+
 :root {
-  --font-heading: var(--font-geist, "Geist");
-  --font-body: var(--font-geist, "Geist");
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-}
-
-body, p {
-  font-family: var(--font-body);
+  --font-geist: 'Geist', sans-serif;
+  --font-heading: var(--font-geist);
+  --font-body: var(--font-geist);
 }
 
 .font-heading {
