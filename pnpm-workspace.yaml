@@ -2,3 +2,5 @@ packages:
   - apps/*
 allowBuilds:
   esbuild: true
+minimumReleaseAgeExclude:
+  - geist@1.9.0

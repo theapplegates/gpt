@@ -30,12 +30,12 @@
 /* custom/styles.css */
 body {
   font-family:
-    'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    'geist-v5-latin-regular', 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 code,
 pre {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'geist-mono-v6-latin-regular', monospace;
 }
 
 /* 针对深色模式微调背景或强调色 */
