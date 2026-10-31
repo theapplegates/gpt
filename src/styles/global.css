@@ -2807,4 +2807,37 @@ main,
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.main-shell,
+main,
+.content-column,
+.article-column,
+.article-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cloudinary-picture {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.article-content picture,
+.article-content pre,
+.article-content .expressive-code {
+  max-width: 100%;
+}
+
+.article-content pre {
+  overflow-x: auto;
+}
+
+.article-neighbors {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 
